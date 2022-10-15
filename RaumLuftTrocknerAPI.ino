@@ -6,10 +6,11 @@ void turnDrumByDegrees(double degrees) {
 
 void turnDrumByMilliseconds(double milliseconds) {
   activateTurningBarrel();
-  Serial.println("Started turning barrel. Milliseconds since start: " + String(millis()));
+  Serial.println("Started turning barrel.");
+  Serial.println("Milliseconds since start: " + String(millis()));
   delay(milliseconds);
   deactivateTurningBarrel();
-  Serial.println("Stopped turning barrel after " + String(milliseconds) + " milliseconds.");
+  Serial.println("Stopped turning barrel after " + String(milliseconds) + " ms.");
 }
 
 double calculateMillisecondsToTurnBarrel(double roundsPerMinute, double degrees) {

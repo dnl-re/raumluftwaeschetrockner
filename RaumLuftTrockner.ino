@@ -13,6 +13,7 @@ void loop() {
 }
 
 void waitForSeconds(int seconds) {
-  delay(seconds * 1000);
+  int milliseconds = seconds * 1000;
+  Serial.println("Waiting for " + String(milliseconds) + " ms.");
+  delay(milliseconds);
 }
-
