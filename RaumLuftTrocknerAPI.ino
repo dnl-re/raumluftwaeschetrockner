@@ -4,13 +4,20 @@ void turnDrumByDegrees(double degrees) {
   turnDrumByMilliseconds(millisecondsToTurnBarrel);
 }
 
+unsigned long previousMillis2 = 0;
+
 void turnDrumByMilliseconds(double milliseconds) {
-  activateTurningBarrel();
-  Serial.println("Started turning barrel.");
-  Serial.println("Milliseconds since start: " + String(millis()));
-  delay(milliseconds);
-  deactivateTurningBarrel();
-  Serial.println("Stopped turning barrel after " + String(milliseconds) + " ms.");
+  // Todo: this is still blocking
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis2 >= milliseconds) {
+    previousMillis2 = currentMillis;
+    activateTurningBarrel();
+    Serial.println("Started turning barrel.");
+    Serial.println("Milliseconds since start: " + String(millis()));
+    delay(milliseconds);
+    deactivateTurningBarrel();
+    Serial.println("Stopped turning barrel after " + String(milliseconds) + " ms.");
+  }
 }
 
 double calculateMillisecondsToTurnBarrel(double roundsPerMinute, double degrees) {
