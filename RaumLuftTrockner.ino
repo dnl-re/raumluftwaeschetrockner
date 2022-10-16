@@ -2,34 +2,26 @@
 #include <PubSubClient.h>
 
 const char* ssid = "Transzendenz";
-const char* password = "*******************";
+const char* password = "*************************";
 const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 
-// the setup function runs once when you press reset or power the board
+// Todo: Either call it barrel or drum. Not both
+
 void setup() {
-  Serial.begin(115200);
-  Serial.println();
-  Serial.println("ESP gestartet");
-
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.println("Start connecting to wifi '" + String(ssid) + "'.");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(2000);
-    Serial.println("Retry connecting to wifi '" + String(ssid) + "'.");
-  }
-  Serial.println("Successfully connected to wifi '" + String(ssid) + "'.");
-  client.setServer(mqtt_server, 1883);
-  client.setCallback(callback);
+  initializeSerial();
+  initializeLEDs();
+  initializeWifi();
+  initializeMqtt();
 }
 
 unsigned long previousMillis = 0;
+boolean turningDrumIsActive = false;
+const long interval = 15000;
+unsigned long currentMillis;
 
 void loop() {
   if (!client.connected()) {
@@ -38,12 +30,54 @@ void loop() {
   client.loop();
 
 
-  const long interval = 30000;
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval){
+  currentMillis = millis();
+  if (currentMillis - previousMillis >= interval || turningDrumIsActive){
     previousMillis = currentMillis;
     turnDrumByDegrees(180.0);
   }
+}
+
+void setTurningDrumActivity(boolean isActive){
+  turningDrumIsActive = isActive;
+}
+
+long getInterval(){
+  return interval;
+}
+
+long getCurrentMillis(){
+  return currentMillis;
+}
+
+boolean getTurningDrumActivity(){
+  return turningDrumIsActive;
+}
+
+void initializeSerial(){
+  Serial.begin(115200);
+  Serial.println();
+  Serial.println("ESP gestartet");
+}
+
+void initializeLEDs(){
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void initializeWifi(){
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("Start connecting to wifi '" + String(ssid) + "'.");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(2000);
+    Serial.println("Retry connecting to wifi '" + String(ssid) + "'.");
+  }
+  Serial.println("Successfully connected to wifi '" + String(ssid) + "'.");
+}
+
+void initializeMqtt(){
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
 }
 
 void waitForSeconds(int seconds) {
