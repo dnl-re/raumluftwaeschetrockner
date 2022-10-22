@@ -1,8 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include "ArduinoJson.h"
 
 const char* ssid = "Transzendenz";
-const char* password = "*************************";
+const char* password = "*********************";
 const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
@@ -23,6 +24,13 @@ boolean turningDrumIsActive = false;
 const long interval = 15000;
 unsigned long currentMillis;
 
+
+struct {
+  long lengthOfPauseInMs;
+  int degreesTurningBarrel;
+  int lengthOfProgramInMs;
+} operationConfiguration;
+
 void loop() {
   if (!client.connected()) {
     reconnect();
@@ -31,40 +39,40 @@ void loop() {
 
 
   currentMillis = millis();
-  if (currentMillis - previousMillis >= interval || turningDrumIsActive){
+  if (currentMillis - previousMillis >= interval || turningDrumIsActive) {
     previousMillis = currentMillis;
     turnDrumByDegrees(180.0);
   }
 }
 
-void setTurningDrumActivity(boolean isActive){
+void setTurningDrumActivity(boolean isActive) {
   turningDrumIsActive = isActive;
 }
 
-long getInterval(){
+long getInterval() {
   return interval;
 }
 
-long getCurrentMillis(){
+long getCurrentMillis() {
   return currentMillis;
 }
 
-boolean getTurningDrumActivity(){
+boolean getTurningDrumActivity() {
   return turningDrumIsActive;
 }
 
-void initializeSerial(){
+void initializeSerial() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("ESP gestartet");
 }
 
-void initializeLEDs(){
+void initializeLEDs() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
-void initializeWifi(){
+void initializeWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("Start connecting to wifi '" + String(ssid) + "'.");
@@ -75,7 +83,7 @@ void initializeWifi(){
   Serial.println("Successfully connected to wifi '" + String(ssid) + "'.");
 }
 
-void initializeMqtt(){
+void initializeMqtt() {
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
 }
@@ -103,12 +111,31 @@ void callback(char* topic, byte* payload, unsigned int length) {
   String strTopic = String(topic);
   String strPayload = String((char*)payload);
   Serial.println("Received message from topic " + strTopic + " : " + strPayload);
+
   if (strTopic == "Raumlufttrockner/Led") {
-    if (strPayload == "false") {
-      digitalWrite(LED_BUILTIN, HIGH);
-    }
-    if (strPayload == "true") {
-      digitalWrite(LED_BUILTIN, LOW);
+    StaticJsonDocument<300> doc;
+    DeserializationError error = deserializeJson(doc, strPayload);
+
+
+    if (!error) {
+
+      Serial.println("parsing json: ");
+
+      long lengthOfPauseInMs = doc["lengthOfPauseInMs"];
+
+      operationConfiguration.lengthOfPauseInMs = doc["lengthOfPauseInMs"];
+      operationConfiguration.lengthOfProgramInMs = doc["lengthOfProgramInMs"];
+      operationConfiguration.degreesTurningBarrel = doc["degreesTurningBarrel"];
+
+
+    } else {
+
+      if (strPayload == "false") {
+        digitalWrite(LED_BUILTIN, HIGH);
+      }
+      if (strPayload == "true") {
+        digitalWrite(LED_BUILTIN, LOW);
+      }
     }
   }
 }
