@@ -3,7 +3,7 @@
 #include "ArduinoJson.h"
 
 const char* ssid = "Transzendenz";
-const char* password = "*********************";
+const char* password = "********************";
 const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
@@ -17,19 +17,21 @@ void setup() {
   initializeLEDs();
   initializeWifi();
   initializeMqtt();
+  initializeProgramConfiguration();
 }
 
 unsigned long previousMillis = 0;
 boolean turningDrumIsActive = false;
-const long interval = 15000;
 unsigned long currentMillis;
+boolean programIsActive = false;
 
 
 struct {
+  String operationType;
   long lengthOfPauseInMs;
-  int degreesTurningBarrel;
+  double degreesTurningBarrel;
   int lengthOfProgramInMs;
-} operationConfiguration;
+} programConfiguration, operationConfiguration;
 
 void loop() {
   if (!client.connected()) {
@@ -37,11 +39,15 @@ void loop() {
   }
   client.loop();
 
+  // Todo: ensure that json is parsed into long, double and int accordingly
+  // Todo: integrate programConfiguration.lengthOfProgramInMs
 
-  currentMillis = millis();
-  if (currentMillis - previousMillis >= interval || turningDrumIsActive) {
-    previousMillis = currentMillis;
-    turnDrumByDegrees(180.0);
+  if (programIsActive) {
+    currentMillis = millis();
+    if (currentMillis - previousMillis >= programConfiguration.lengthOfPauseInMs || turningDrumIsActive) {
+      previousMillis = currentMillis;
+      turnDrumByDegrees(programConfiguration.degreesTurningBarrel);
+    }
   }
 }
 
@@ -50,7 +56,7 @@ void setTurningDrumActivity(boolean isActive) {
 }
 
 long getInterval() {
-  return interval;
+  return programConfiguration.lengthOfPauseInMs;
 }
 
 long getCurrentMillis() {
@@ -88,6 +94,13 @@ void initializeMqtt() {
   client.setCallback(callback);
 }
 
+void initializeProgramConfiguration() {
+  programConfiguration.operationType = "";
+  programConfiguration.lengthOfPauseInMs = 50000;
+  programConfiguration.lengthOfProgramInMs = 7 * 60 * 60 * 1000;
+  programConfiguration.degreesTurningBarrel = 180.0;
+}
+
 void waitForSeconds(int seconds) {
   int milliseconds = seconds * 1000;
   Serial.println("Waiting for " + String(milliseconds) + " ms.");
@@ -118,24 +131,60 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 
     if (!error) {
+      operationConfiguration.operationType = String(doc["operationType"]);
 
-      Serial.println("parsing json: ");
-
-      long lengthOfPauseInMs = doc["lengthOfPauseInMs"];
-
-      operationConfiguration.lengthOfPauseInMs = doc["lengthOfPauseInMs"];
-      operationConfiguration.lengthOfProgramInMs = doc["lengthOfProgramInMs"];
-      operationConfiguration.degreesTurningBarrel = doc["degreesTurningBarrel"];
-
+      handleOperationTypeStartProgram(doc);
+      handleOperationTypeStopProgram(doc);
+      handleOperationTypeStartSpinningBarrel(doc);
+      handleOperationTypeStopSpinningBarrel(doc);
 
     } else {
 
       if (strPayload == "false") {
-        digitalWrite(LED_BUILTIN, HIGH);
+        deactivateTurningBarrel();
+        Serial.println("Deactivated turning barrel");
       }
       if (strPayload == "true") {
-        digitalWrite(LED_BUILTIN, LOW);
+        activateTurningBarrel();
+        Serial.println("Activated turning barrel");
       }
     }
+  }
+}
+
+void handleOperationTypeStartProgram(StaticJsonDocument<300> doc) {
+  if (operationConfiguration.operationType == "startProgram") {
+    programConfiguration.lengthOfPauseInMs = doc["lengthOfPauseInMs"];
+    programConfiguration.lengthOfProgramInMs = doc["lengthOfProgramInMs"];
+    programConfiguration.degreesTurningBarrel = doc["degreesTurningBarrel"];
+    programIsActive = true;
+    Serial.println("Started program with configuration: ");
+    Serial.println("  - lengthOfPauseInMs: " + String(programConfiguration.lengthOfPauseInMs));
+    Serial.println("  - lengthOfProgramInMs: " + String(programConfiguration.lengthOfProgramInMs));
+    Serial.println("  - degreesTurningBarrel: " + String(programConfiguration.degreesTurningBarrel));
+  }
+}
+
+void handleOperationTypeStopProgram(StaticJsonDocument<300> doc) {
+  if (operationConfiguration.operationType == "stopProgram") {
+    programIsActive = false;
+    Serial.println("Stopped program with configuration left as it was: ");
+    Serial.println("  - lengthOfPauseInMs: " + String(programConfiguration.lengthOfPauseInMs));
+    Serial.println("  - lengthOfProgramInMs: " + String(programConfiguration.lengthOfProgramInMs));
+    Serial.println("  - degreesTurningBarrel: " + String(programConfiguration.degreesTurningBarrel));
+  }
+}
+
+void handleOperationTypeStartSpinningBarrel(StaticJsonDocument<300> doc) {
+  if (operationConfiguration.operationType == "startSpinningBarrel") {
+    activateTurningBarrel();
+    Serial.println("Activated turning barrel");
+  }
+}
+
+void handleOperationTypeStopSpinningBarrel(StaticJsonDocument<300> doc) {
+  if (operationConfiguration.operationType == "stopSpinningBarrel") {
+    deactivateTurningBarrel();
+    Serial.println("Deactivated turning barrel");
   }
 }
