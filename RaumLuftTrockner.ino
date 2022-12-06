@@ -3,7 +3,7 @@
 #include "ArduinoJson.h"
 
 const char* ssid = "Transzendenz";
-const char* password = "********************";
+const char* password = "Mysteries.Lead-To#Relationship37!";
 const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
@@ -14,7 +14,8 @@ PubSubClient client(espClient);
 
 void setup() {
   initializeSerial();
-  initializeLEDs();
+  initializeOnboardLED();
+  initializeRemoteLED();
   initializeWifi();
   initializeMqtt();
   initializeProgramConfiguration();
@@ -24,6 +25,11 @@ unsigned long previousMillis = 0;
 boolean turningDrumIsActive = false;
 unsigned long currentMillis;
 boolean programIsActive = false;
+
+int barrelPin = 5;
+
+int remoteLedPin = 0;
+int remoteLedBrightness = 20;
 
 
 struct {
@@ -73,9 +79,14 @@ void initializeSerial() {
   Serial.println("ESP gestartet");
 }
 
-void initializeLEDs() {
+void initializeOnboardLED() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void initializeRemoteLED() {
+  pinMode(0, OUTPUT);
+  analogWrite(remoteLedPin, LOW);
 }
 
 void initializeWifi() {

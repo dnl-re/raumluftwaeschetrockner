@@ -31,8 +31,12 @@ double calculateMillisecondsToTurnBarrel(double roundsPerMinute, double degrees)
 
 void activateTurningBarrel() {
   digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(barrelPin, HIGH);
+  analogWrite(remoteLedPin, remoteLedBrightness);
 }
 
 void deactivateTurningBarrel() {
   digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(barrelPin, LOW);
+  analogWrite(remoteLedPin, LOW);
 }
