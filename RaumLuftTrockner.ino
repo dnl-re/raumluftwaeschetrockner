@@ -10,8 +10,6 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 
-// Todo: Either call it barrel or drum. Not both
-
 void setup() {
   initializeSerial();
   initializeOnboardLED();
@@ -22,7 +20,7 @@ void setup() {
 }
 
 unsigned long previousMillis = 0;
-boolean turningDrumIsActive = false;
+boolean turningBarrelIsActive = false;
 unsigned long currentMillis;
 boolean programIsActive = false;
 
@@ -50,15 +48,15 @@ void loop() {
 
   if (programIsActive) {
     currentMillis = millis();
-    if (currentMillis - previousMillis >= programConfiguration.lengthOfPauseInMs || turningDrumIsActive) {
+    if (currentMillis - previousMillis >= programConfiguration.lengthOfPauseInMs || turningBarrelIsActive) {
       previousMillis = currentMillis;
-      turnDrumByDegrees(programConfiguration.degreesTurningBarrel);
+      turnBarrelByDegrees(programConfiguration.degreesTurningBarrel);
     }
   }
 }
 
-void setTurningDrumActivity(boolean isActive) {
-  turningDrumIsActive = isActive;
+void setTurningBarrelActivity(boolean isActive) {
+  turningBarrelIsActive = isActive;
 }
 
 long getInterval() {
@@ -69,8 +67,8 @@ long getCurrentMillis() {
   return currentMillis;
 }
 
-boolean getTurningDrumActivity() {
-  return turningDrumIsActive;
+boolean getTurningBarrelActivity() {
+  return turningBarrelIsActive;
 }
 
 void initializeSerial() {

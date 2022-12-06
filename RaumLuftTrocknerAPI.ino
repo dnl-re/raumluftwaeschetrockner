@@ -1,22 +1,22 @@
-void turnDrumByDegrees(double degrees) {
+void turnBarrelByDegrees(double degrees) {
   double roundsPerMinute = 3;
   double millisecondsToTurnBarrel = calculateMillisecondsToTurnBarrel(roundsPerMinute, degrees);
-  turnDrumByMilliseconds(millisecondsToTurnBarrel);
+  turnBarrelByMilliseconds(millisecondsToTurnBarrel);
 }
 
 unsigned long previousMillis2 = getInterval();
 
-void turnDrumByMilliseconds(double milliseconds) {
-  if (!getTurningDrumActivity()) {
+void turnBarrelByMilliseconds(double milliseconds) {
+  if (!getTurningBarrelActivity()) {
     activateTurningBarrel();
-    setTurningDrumActivity(true);
+    setTurningBarrelActivity(true);
     Serial.println("Started turning barrel. Debug ms: " + String(millis()));
   }
 
   if (getCurrentMillis() - previousMillis2 >= milliseconds) {
     previousMillis2 = getCurrentMillis() + getInterval();
     deactivateTurningBarrel();
-    setTurningDrumActivity(false);
+    setTurningBarrelActivity(false);
     Serial.println("Stopped turning barrel after " + String(milliseconds) + " ms. Debug ms: " + String(millis()));
   }
 }
